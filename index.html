@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>별똥별 잡기</title>
+    <style>
+        /* --- 기본 및 폰트 스타일 --- */
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+        :root {
+            --primary-bg: #0c0c24; /* 깊은 밤하늘 색 */
+            --star-color: #fffb8a; /* 따뜻한 노란색 별 */
+            --text-color: #ffffff;
+            --border-color: #ffffff;
+            --highlight-color: #ff8ac5; /* 포인트 핑크 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DotGothic16', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        /* --- 게임 컨테이너 및 UI 요소 --- */
+        .game-wrapper {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            margin-bottom: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            font-size: 1.2rem;
+        }
+
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            cursor: pointer;
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0),
+                radial-gradient(circle at 10px 10px, rgba(255,255,255,0.3) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+
+        /* --- 별똥별 스타일 및 애니메이션 --- */
+        .star {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--star-color);
+            box-shadow: 
+                0 0 8px var(--star-color),
+                0 0 12px var(--text-color);
+            
+            /* 픽셀 느낌을 위한 사각형 모양 */
+            will-change: transform;
+            animation: fall linear;
+        }
+        .star::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 12px;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(to right, rgba(255, 251, 138, 0.7), transparent);
+            transform: rotate(-15deg);
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(-50px) rotate(0deg);
+            }
+            to {
+                transform: translateY(calc(800px + 50px)) rotate(120deg);
+            }
+        }
+
+        /* --- 메시지 및 모달 창 --- */
+        #wish-message {
+            position: absolute;
+            color: var(--highlight-color);
+            font-size: 1.5rem;
+            opacity: 0;
+            pointer-events: none; /* 클릭 방해 방지 */
+            transition: opacity 0.5s, transform 0.5s;
+            text-shadow: 1px 1px 0 #000, 0 0 10px var(--highlight-color);
+        }
+
+        #wish-message.show {
+            opacity: 1;
+            transform: translateY(-20px);
+        }
+        
+        #modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            padding: 30px 40px;
+            border: 2px solid var(--border-color);
+            background-color: var(--primary-bg);
+        }
+        
+        #modal h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        #modal p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        #final-score {
+            color: var(--star-color);
+            font-size: 1.5rem;
+        }
+
+        button {
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border: 2px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        button:hover {
+            background-color: var(--highlight-color);
+            color: var(--primary-bg);
+            text-shadow: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <div class="header">
+            <div id="score-board">점수: 0</div>
+            <div id="timer-board">시간: 20초</div>
+        </div>
+        <div id="game-container">
+            <div id="wish-message">Make a wish!</div>
+        </div>
+    </div>
+
+    <!-- 시작 및 게임 오버 모달 -->
+    <div id="modal">
+        <div class="modal-content">
+            <h2>별똥별 잡기</h2>
+            <p id="modal-text">별똥별을 클릭해서 소원을 빌어보세요!</p>
+            <button id="start-button">시작하기</button>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const scoreBoard = document.getElementById('score-board');
+        const timerBoard = document.getElementById('timer-board');
+        const wishMessage = document.getElementById('wish-message');
+        const modal = document.getElementById('modal');
+        const modalText = document.getElementById('modal-text');
+        const startButton = document.getElementById('start-button');
+        
+        const GAME_DURATION = 20; // 게임 시간 (초)
+        
+        let score = 0;
+        let timeLeft = GAME_DURATION;
+        let timerId = null;
+        let starIntervalId = null;
+        let isGameRunning = false;
+
+        // 게임 시작 함수
+        function startGame() {
+            // 초기화
+            score = 0;
+            timeLeft = GAME_DURATION;
+            scoreBoard.textContent = `점수: ${score}`;
+            timerBoard.textContent = `시간: ${timeLeft}초`;
+            isGameRunning = true;
+
+            modal.classList.add('hidden');
+            
+            // 타이머 시작
+            timerId = setInterval(() => {
+                timeLeft--;
+                timerBoard.textContent = `시간: ${timeLeft}초`;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // 별 생성 시작
+            starIntervalId = setInterval(createStar, 500);
+        }
+        
+        // 게임 종료 함수
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(timerId);
+            clearInterval(starIntervalId);
+            
+            // 모든 별 제거
+            gameContainer.querySelectorAll('.star').forEach(star => star.remove());
+
+            // 결과 모달 표시
+            modalText.innerHTML = `게임 종료!<br>당신의 최종 점수는 <span id="final-score">${score}</span>점 입니다.`;
+            startButton.textContent = '다시 시작';
+            modal.classList.remove('hidden');
+        }
+
+        // 별 생성 함수
+        function createStar() {
+            if (!isGameRunning) return;
+
+            const star = document.createElement('div');
+            star.classList.add('star');
+            
+            // 랜덤 위치 및 속도 설정
+            const gameWidth = gameContainer.clientWidth;
+            star.style.left = `${Math.random() * (gameWidth - 20)}px`;
+            star.style.animationDuration = `${Math.random() * 2 + 2}s`; // 2~4초 사이
+
+            // 별 클릭 이벤트
+            star.addEventListener('click', () => {
+                score++;
+                scoreBoard.textContent = `점수: ${score}`;
+                
+                // 소원 메시지 표시
+                showWishMessage(star.offsetLeft, star.offsetTop);
+
+                star.remove();
+            });
+            
+            // 화면 밖으로 나가면 제거
+            star.addEventListener('animationend', () => {
+                star.remove();
+            });
+
+            gameContainer.appendChild(star);
+        }
+
+        // 소원 메시지 표시 함수
+        function showWishMessage(x, y) {
+            wishMessage.style.left = `${x}px`;
+            wishMessage.style.top = `${y}px`;
+            wishMessage.classList.add('show');
+
+            setTimeout(() => {
+                wishMessage.classList.remove('show');
+            }, 1000); // 1초 후 사라짐
+        }
+
+        // 시작 버튼 이벤트 리스너
+        startButton.addEventListener('click', startGame);
+
+    </script>
+</body>
+</html>
